@@ -1,0 +1,54 @@
+package solr;
+
+import java.io.IOException;
+
+import org.apache.http.impl.bootstrap.HttpServer;
+import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrServer;
+import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.HttpSolrServer;
+import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.common.SolrDocumentList;
+import org.apache.solr.common.SolrInputDocument;
+import org.apache.zookeeper.client.StaticHostProvider;
+import org.omg.CORBA.PRIVATE_MEMBER;
+import org.apache.solr.client.solrj.SolrServer;
+import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.common.SolrInputDocument;
+
+public class hellosolr {
+	
+	 public static void main( String[] args )throws IOException, SolrServerException
+	    {
+	    	
+	    	 String url = "http://swapnil-VPCEL22FX:8983/solr/techproducts/";
+	    	 SolrClient server = new HttpSolrServer( url );
+	    	 
+	    	 String s1 = "";
+	        System.out.println("Your search result for "+s1+" is : ");   
+	        
+    		    	 for (String i:args)
+    		    	 {
+    		    		 s1= s1+" "+i;
+    		    	 }
+    		    	 System.out.println(s1);
+	    	 SolrQuery query = new SolrQuery();
+	    	    query.setQuery(s1);
+	    	    
+	    	 //  query.addFilterQuery("cat:electronics"); //Dont use this for techproducts data
+	          //  query.setFields("price"); //Dont use this for techproducts data
+	    	    query.setStart(0);    
+	    	    //query.set("defType", "edismax"); //Dont use this for techproducts data
+	    	    QueryResponse response = server.query(query);
+	    	    SolrDocumentList results = response.getResults();
+	    	    for (int i = 0; i < results.size(); ++i) {
+	    	      System.out.println(results.get(i));
+
+	    	 
+	    	    }
+	    }   	
+	        
+}
+
+
