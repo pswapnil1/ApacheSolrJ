@@ -1,0 +1,160 @@
+package solr;
+import org.apache.lucene.search.Hits;
+ 
+import org.apache.lucene.document.Document;
+import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TopDocs;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Map;
+import java.io.*;
+import java.util.ArrayList;
+
+
+import org.apache.lucene.analysis.SimpleAnalyzer;
+import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.HttpSolrServer;
+import org.apache.solr.client.solrj.response.FieldStatsInfo;
+import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.client.solrj.response.RangeFacet.Date;
+import org.apache.solr.common.SolrDocumentList;
+import org.apache.solr.common.util.NamedList;
+import org.apache.zookeeper.server.persistence.FileSnap;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.compound.hyphenation.TernaryTree.Iterator;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.LongField;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.IndexWriterConfig.OpenMode;
+import org.apache.lucene.search.Hit;
+import org.apache.lucene.search.Hits;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.Searcher;
+import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.TopScoreDocCollector;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.LockFactory;
+import org.apache.lucene.store.LockObtainFailedException;
+import org.apache.lucene.util.Version;
+
+import java.io.*;
+import java.util.ArrayList;
+
+public class newsolrtextfile  {
+	public static final String FILES_TO_INDEX_DIRECTORY = "/home/swapnil/Desktop/lucene/";
+	public static final String INDEX_DIRECTORY = "/home/swapnil/Desktop/newindexdir/";
+	public static final boolean CREATE_INDEX = true; // true: drop existing index and create new one
+	// false: add new documents to existing index
+	public static final String FIELD_CONTENTS = "contents";
+	public static final String FIELD_PATH = "path";  
+	
+	public static void Index() throws CorruptIndexException, LockObtainFailedException, IOException {
+		
+	final File docDir = new File(FILES_TO_INDEX_DIRECTORY);
+	
+	Analyzer analyzer = new StandardAnalyzer();
+	boolean recreateIndexIfExists = true;
+	IndexWriter indexWriter = new IndexWriter(INDEX_DIRECTORY, analyzer, recreateIndexIfExists);
+	File dir = new File(FILES_TO_INDEX_DIRECTORY);
+	File[] files = dir.listFiles();
+	for (File file : files) {
+		Document document = new Document();
+
+		String path = file.getCanonicalPath();
+		document.add(new Field(FIELD_PATH, path, Field.Store.YES, Field.Index.UN_TOKENIZED));
+
+		Reader reader = new FileReader(file);
+		document.add(new Field(FIELD_CONTENTS, reader));
+
+		indexWriter.addDocument(document);
+	}
+	indexWriter.optimize();
+	indexWriter.close();
+	
+	
+		}
+	public static void main(String[] args) throws IOException, ParseException {
+	Index();
+
+	String s1 = "";
+	int n;
+	Directory dir = FSDirectory.getDirectory(INDEX_DIRECTORY);
+	//Directory dir = FSDirectory.open(new File(INDEX_DIRECTORY));
+	IndexReader indexReader = IndexReader.open(dir);
+	IndexSearcher searcher = new IndexSearcher(indexReader);
+	Analyzer analyzer = new StandardAnalyzer();
+	//Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_CURRENT);
+	QueryParser parser = new QueryParser(s1, analyzer);
+			//QueryParser parser = new QueryParser(Version.LUCENE_CURRENT, s1, analyzer);
+	//QueryParser parser = new QueryParser(s1,analyzer); 
+	
+	
+	
+    System.out.println("Your search result for "+s1+" is : ");   	        
+	    	 for (String i:args)
+	    	 {
+	    		 s1= s1+" "+i;
+	    	 }
+	    	 System.out.println(s1);
+	    
+	Query q = parser.parse(s1);
+	int hitsPerPage = 100;
+	 
+	
+	TopScoreDocCollector collector = TopScoreDocCollector.create( 
+	          hitsPerPage, true); 
+	 searcher.search(q);
+	 //searcher.search(q, collector); 
+//	 ScoreDoc[] hits = collector.topDocs().scoreDocs; 
+//	  System.out.println("Found " + hits.length + " hits."); 
+//      for (int i = 0; i < hits.length; ++i) { 
+//        int docId = hits[i].doc; 
+//        Document d = searcher.doc(docId); 
+//        System.out.println((i + 1) + ". " + d.get("content")); 
+//        System.out.println("" +d.get(FIELD_PATH));
+        
+                  
+        TopDocs topDocs = searcher.search(q, hitsPerPage);
+        ScoreDoc[] hits1 = topDocs.scoreDocs;
+        for (int i1 = 0; i1 < hits1.length; i1++) {
+          int docId1 = hits1[i1].doc;
+          Document d1 = searcher.doc(docId1);
+          // do something with current hit
+          System.out.println((i1 + 1) + ". " + d1.get("content")); 
+          System.out.println("" +d1.get(FIELD_PATH));
+        }
+        
+        
+        indexReader.close();   
+      } 
+      
+	}
+
+	
+	
+	
+	
+
+	
+	
+
